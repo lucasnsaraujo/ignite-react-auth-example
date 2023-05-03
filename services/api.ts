@@ -1,5 +1,6 @@
-import axios, { Axios, AxiosError,  } from "axios";
-import { parseCookies, setCookie } from 'nookies'
+import axios, { Axios, AxiosError, } from "axios";
+import { parseCookies, setCookie, destroyCookie } from 'nookies'
+import Router from 'next/router'
 
 let cookies = parseCookies();
 let isRefreshing = false;
@@ -11,6 +12,12 @@ export const api = axios.create({
     Authorization: `Bearer ${cookies['nextauth.token']}`
   }
 });
+
+export function signOut() {
+  destroyCookie(undefined, 'nextauth.token')
+  destroyCookie(undefined, 'nextauth.refreshToken')
+  Router.push('/')
+}
 
 api.interceptors.response.use(response => response, (error: AxiosError) => {
   if (error?.response?.status === 401) {
@@ -38,30 +45,32 @@ api.interceptors.response.use(response => response, (error: AxiosError) => {
           })
 
           api.defaults.headers['Authorization'] = `Bearer ${token}`
-          
+
           failedRequestsQueue.forEach(request => request.resolve(token))
           failedRequestsQueue = []
         }).catch(error => {
           failedRequestsQueue.forEach(request => request.reject(error))
           failedRequestsQueue = []
         })
-        .finally(() => {
-          isRefreshing = false;
-        })
+          .finally(() => {
+            isRefreshing = false;
+          })
       }
       return new Promise((resolve, reject) => {
         failedRequestsQueue.push({
           resolve: (token: string) => {
             originalConfig.headers['Authorization'] = `Bearer ${token}`
             resolve(api(originalConfig))
-          } ,
+          },
           reject: (error: AxiosError) => {
             reject(error)
           }
         })
       })
     } else {
-
+      signOut();
     }
   }
-})
+  return Promise.reject(error)
+}
+)

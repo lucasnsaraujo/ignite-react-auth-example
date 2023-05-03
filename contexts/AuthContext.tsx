@@ -1,7 +1,7 @@
 import { ReactNode, createContext, useEffect, useState } from "react";
-import { api } from "../services/api";
+import { api, signOut } from "../services/api";
 import Router from 'next/router'
-import { setCookie, parseCookies } from 'nookies'
+import { setCookie, parseCookies, destroyCookie } from 'nookies'
 
 type SignInCredentials = {
   email: string;
@@ -36,8 +36,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (token) {
       api.get('/me').then(response => {
         const { email, permissions, roles } = response?.data
-        setUser({email, permissions, roles})
+        setUser({ email, permissions, roles })
       })
+        .catch(error => {
+          signOut();
+
+        })
     }
   }, [])
 
