@@ -4,7 +4,18 @@ import Router from 'next/router'
 
 let cookies = parseCookies();
 let isRefreshing = false;
-let failedRequestsQueue = [];
+let failedRequestsQueue: FailedRequest[] = [];
+
+type FailedRequest = {
+  reject: (error: AxiosError) => void;
+  resolve: (token: string) => void;
+}
+
+type ErrorResponse = {
+  code: string;
+  error: boolean;
+  message: string;
+}
 
 export const api = axios.create({
   baseURL: "http://localhost:3333",
@@ -21,7 +32,8 @@ export function signOut() {
 
 api.interceptors.response.use(response => response, (error: AxiosError) => {
   if (error?.response?.status === 401) {
-    if (error.response?.data?.code === 'token.expired') {
+    const response = error.response.data as ErrorResponse;
+    if (response.code === 'token.expired') {
       cookies = parseCookies();
 
       const { 'nextauth.refreshToken': refreshToken } = cookies;
@@ -66,6 +78,7 @@ api.interceptors.response.use(response => response, (error: AxiosError) => {
             reject(error)
           }
         })
+        console.log(failedRequestsQueue, typeof failedRequestsQueue)
       })
     } else {
       signOut();
