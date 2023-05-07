@@ -4,6 +4,8 @@ import { api } from "../../services/apiClient"
 import { withSSRAuth } from "../../utils/withSSRAuth"
 import { GetServerSideProps } from "next"
 import { setupAPIClient } from "../../services/api"
+import { AuthTokenError } from "../../services/errors/AuthTokenError"
+import { destroyCookie } from "nookies"
 
 export default function Dashboard() {
     const { user } = useContext(AuthContext)
@@ -20,11 +22,23 @@ export default function Dashboard() {
     )
 }
 
-export const getServerSideProps: GetServerSideProps = withSSRAuth(async (ctx) => {
+export const getServerSideProps = withSSRAuth(async (ctx) => {
     const apiClient = setupAPIClient(ctx)
-    const response = await apiClient.get('/me')
 
-    console.log(response.data)
+    try {
+        const response = await apiClient.get('/me')
+    } catch (err) {
+        destroyCookie(ctx, 'nextauth.token')
+        destroyCookie(ctx, 'nextauth.refreshToken')
+
+        return {
+            redirect: {
+                destination: '/',
+                permanent: false
+            }
+        }
+    }
+
     return {
         props: {}
 
