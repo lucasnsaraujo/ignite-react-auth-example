@@ -25,17 +25,37 @@ type User = {
   roles: string[]
 }
 
-export function signOut() {
+export function signOut(broadcast = true) {
   destroyCookie(undefined, 'nextauth.token')
   destroyCookie(undefined, 'nextauth.refreshToken')
+
+  if (broadcast) {
+    authChannel.postMessage('sign-out')
+  }
+
   Router.push('/')
 }
 
 export const AuthContext = createContext({} as AuthContextData);
 
+let authChannel: BroadcastChannel
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User>();
   const isAuthenticated = !!user;
+
+  useEffect(() => {
+    authChannel = new BroadcastChannel('sign-out')
+    authChannel.onmessage = (message) => {
+      switch (message.data) {
+        case 'sign-out':
+          signOut(false)
+          break;
+        default:
+          break;
+      }
+    }
+  })
 
   useEffect(() => {
     const cookies = parseCookies();

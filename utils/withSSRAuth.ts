@@ -28,14 +28,11 @@ export function withSSRAuth<P>(fn: GetServerSideProps<P>, options?: WithSSRAuthO
       const user = decode<{ permissions: string[], roles: string[] }>(token);
       const { permissions, roles } = options
 
-      console.log({ user, permissions, roles })
-
       const userHasValidPermissions = validateUserPermissions({
         user,
         permissions,
         roles
       })
-      console.log({ userHasValidPermissions })
 
       if (!userHasValidPermissions) {
         return {

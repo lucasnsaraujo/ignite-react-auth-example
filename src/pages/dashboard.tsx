@@ -6,7 +6,7 @@ import { setupAPIClient } from "../../services/api"
 import Can from "../../components/Can"
 
 export default function Dashboard() {
-    const { user } = useContext(AuthContext)
+    const { user, signOut } = useContext(AuthContext)
 
     useEffect(() => {
         api.get('/me').then(response => {
@@ -17,10 +17,14 @@ export default function Dashboard() {
 
     return (
         <>
-            <h1>User: {user?.email}</h1>
+            <h1>Dashboard</h1>
+            <h2>Current user: {user?.email}</h2>
             <Can permissions={['metrics.list']}>
-                User can see this.
+                User has metrics.list.
             </Can>
+            <br />
+            <br />
+            <button onClick={() => signOut()}>Sign out</button>
         </>
     )
 }
