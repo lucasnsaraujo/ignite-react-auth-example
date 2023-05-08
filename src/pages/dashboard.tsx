@@ -2,10 +2,8 @@ import { useContext, useEffect } from "react"
 import { AuthContext } from "../../contexts/AuthContext"
 import { api } from "../../services/apiClient"
 import { withSSRAuth } from "../../utils/withSSRAuth"
-import { GetServerSideProps } from "next"
 import { setupAPIClient } from "../../services/api"
-import { AuthTokenError } from "../../services/errors/AuthTokenError"
-import { destroyCookie } from "nookies"
+import Can from "../../components/Can"
 
 export default function Dashboard() {
     const { user } = useContext(AuthContext)
@@ -18,26 +16,18 @@ export default function Dashboard() {
     }, [])
 
     return (
-        <h1>User: {user?.email}</h1>
+        <>
+            <h1>User: {user?.email}</h1>
+            <Can permissions={['metrics.list']}>
+                User can see this.
+            </Can>
+        </>
     )
 }
 
 export const getServerSideProps = withSSRAuth(async (ctx) => {
     const apiClient = setupAPIClient(ctx)
-
-    try {
-        const response = await apiClient.get('/me')
-    } catch (err) {
-        destroyCookie(ctx, 'nextauth.token')
-        destroyCookie(ctx, 'nextauth.refreshToken')
-
-        return {
-            redirect: {
-                destination: '/',
-                permanent: false
-            }
-        }
-    }
+    const response = await apiClient.get('/me')
 
     return {
         props: {}
